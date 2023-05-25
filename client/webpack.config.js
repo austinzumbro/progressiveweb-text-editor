@@ -1,11 +1,7 @@
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const WebpackPwaManifest = require("webpack-pwa-manifest");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const path = require("path");
 const { InjectManifest } = require("workbox-webpack-plugin");
-
-// DONE: Add and configure workbox plugins for a service worker and manifest file.
-// DONE: Add CSS loaders and babel to webpack.
 
 module.exports = () => {
   return {
@@ -23,24 +19,25 @@ module.exports = () => {
         template: "./index.html",
         title: "JATE",
       }),
-      new MiniCssExtractPlugin(),
       new InjectManifest({
-        swSrc: "./src/sw.js",
+        swSrc: "./src-sw.js",
         swDest: "service-worker.js",
       }),
       new WebpackPwaManifest({
+        fingerprints: false,
+        inject: true,
         name: "JATE",
         short_name: "JATE",
         description: "just another text editor",
-        // TODO: Check if these colors are correct
         background_color: "#7eb4e2",
         theme_color: "#7eb4e2",
         start_url: "./",
-        // TODO: Check on the icon routing
+        publicPath: "./",
         icons: [
           {
-            src: path.resolve("images/logo.png"),
+            src: path.resolve("src/images/logo.png"),
             sizes: [96, 128, 192, 256, 384, 512],
+            destination: path.join("assets", "icons"),
           },
         ],
       }),
@@ -50,21 +47,33 @@ module.exports = () => {
       rules: [
         {
           test: /\.css$/i,
-          use: [MiniCssExtractPlugin.loader, "css-loader"],
-        },
-        {
-          test: /\.(png|svg|jpg|jpeg|gif)$/i,
-          type: "asset/resource",
+          use: ["style-loader", "css-loader"],
         },
         {
           test: /\.m?js$/,
-          exclude: /(node_modules|bower_components)/,
+          exclude: /node_modules/,
+          // We use babel-loader in order to use ES6.
           use: {
             loader: "babel-loader",
             options: {
               presets: ["@babel/preset-env"],
+              plugins: [
+                "@babel/plugin-proposal-object-rest-spread",
+                "@babel/transform-runtime",
+              ],
             },
           },
+        },
+        {
+          test: /\.(png|jpg|jpeg|gif|svg)$/,
+          use: [
+            {
+              loader: "file-loader",
+              options: {
+                name: "[name].[ext]",
+              },
+            },
+          ],
         },
       ],
     },
